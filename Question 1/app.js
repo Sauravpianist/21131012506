@@ -67,6 +67,21 @@ app.get('/categories/:categoryname/products', async (req, res) => {
     }
 });
 
+app.get('/categories/:categoryname/products/:productid', (req, res) => {
+    const { categoryname, productid } = req.params;
+
+    // Search in the cache for the product details
+    const cachedDataKeys = cache.keys().filter(key => key.startsWith(categoryname));
+    for (let key of cachedDataKeys) {
+        const cachedData = cache.get(key);
+        const product = cachedData.find(p => p.unique_id === productid);
+        if (product) {
+            return res.json(product);
+        }
+    }
+
+    res.status(404).json({ error: 'Product not found' });
+});
 
 
 app.listen(port, () => {
