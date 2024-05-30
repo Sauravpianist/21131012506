@@ -3,16 +3,17 @@ const axios = require('axios');
 const NodeCache = require('node-cache');
 
 const app = express();
-const port = 3000;
-const cache = new NodeCache({ stdTTL: 3600 }); // Cache TTL set to 1 hour
+const port = 5000;
+const cache = new NodeCache({ stdTTL: 3600 });
 
 const ecommerceAPI = [
     'https://20.244.56.144/test/companies/FLP/categories/Computer/products?top=1&minPrice=1&maxPrice=10000',
-    'https://20.244.56.144/test/companies/AMZ/categories/Computer/products?top=1&minPrice=1&maxPrice=10000',
+    'https://20.244.56.144/test/companies/AMZ/categories/Earphone/products?top=1&minPrice=1&maxPrice=10000',
+    'https://20.244.56.144/test/companies/AMZ/categories/Charger/products?top=1&minPrice=1&maxPrice=10000',
+    'https://20.244.56.144/test/companies/AMZ/categories/Mouse/products?top=1&minPrice=1&maxPrice=10000',
+    'https://20.244.56.144/test/companies/AMZ/categories/KeyPad/products?top=1&minPrice=1&maxPrice=10000',
 
 ];
-
-// Helper function to fetch data from all e-commerce APIs
 const fetchDataFromAPIs = async (category) => {
     try {
         const requests = ecommerceAPI.map(api => axios.get(api));
@@ -24,7 +25,6 @@ const fetchDataFromAPIs = async (category) => {
     }
 };
 
-// Generate a unique identifier for each product
 const generateUniqueId = (product, index) => `${product.company}-${product.id}-${index}`;
 
 app.get('/categories/:categoryname/products', async (req, res) => {
@@ -42,7 +42,6 @@ app.get('/categories/:categoryname/products', async (req, res) => {
     try {
         let products = await fetchDataFromAPIs(categoryname);
 
-        // Apply sorting
         if (sort_by) {
             products.sort((a, b) => {
                 if (sort_order === 'asc') {
@@ -53,18 +52,13 @@ app.get('/categories/:categoryname/products', async (req, res) => {
             });
         }
 
-        // Generate unique IDs
         products = products.map((product, index) => ({
             ...product,
             unique_id: generateUniqueId(product, index)
         }));
-
-        // Apply pagination
         const startIndex = (page - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const paginatedProducts = products.slice(startIndex, endIndex);
-
-        // Cache the result
         cache.set(cacheKey, paginatedProducts);
 
         res.json(paginatedProducts);
